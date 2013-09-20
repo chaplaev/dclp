@@ -22,7 +22,7 @@ class huge_class
 {
 public:
 	// SPOT: this member (sign2) has a great impact on GOTCHA probability
-	//uint32_t sign2;
+	uint32_t sign2;
 	uint32_t sign0;
 	uint8_t  data[DataSize];
 	uint32_t sign1;
@@ -168,7 +168,7 @@ static void termhandler(int reason)
 
 int main()
 {
-	cout << "\nDCLP checker v1.21 by <> (c) 2013.";
+	cout << "\nDCLP checker v1.22 by Konstantin Chaplaev (c) 2013.";
 	cout << "\nBuilt on " << __DATE__ << " " __TIME__ << endl << endl;
 
 	// Set Ctrl+C handlers
