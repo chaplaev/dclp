@@ -101,6 +101,23 @@ public:
 
 static dclp<huge_class> a;
 static std::mutex gmutex;
+static void workload(int id)
+{
+	static std::atomic<size_t> count(0);
+	size_t i, j, k;
+
+	this_thread::yield();
+
+	if (1) {
+		i = (count += 10 * (id + 1));
+		for (j = i; j != 0; --j)
+			for (k = j; k != 0; --k)
+				;
+		if (i % 90000 == 0)
+			cout << "id = " << id << ", count = " << i << endl;
+	}
+}
+
 static unsigned __stdcall thread_func(void *param)
 {
 	uint32_t sign0, sign1;
@@ -108,22 +125,13 @@ static unsigned __stdcall thread_func(void *param)
 	bool sane;
 	int id = (int)param;
 
-	static size_t count1 = 0;
-	size_t count2, count3;
-
-	this_thread::yield();
-
-	if (id) {
-		count1 += 5;
-		for (count2 = count1; count2 != 0; --count2)
-			for (count3 = count2; count3 != 0; --count3);
-		if (count1 % 50000 == 0) cout << "count1 == " << count1 << endl;
-	}
+	// simulate some work
+	workload(id);
 
 	// Getting instance
 	auto p = a.get_instance();
 
-	auto check_obj = [&]() {
+	auto check_object = [&]() {
 		sign0 = p->sign0;
 		sign1 = p->sign1;
 		sum = p->get_sum();
@@ -139,7 +147,7 @@ static unsigned __stdcall thread_func(void *param)
 			 << endl;
 	};
 
-	check_obj();
+	check_object();
 	if (1) {
 		if (!sane) {
 			std::lock_guard<std::mutex> lock(gmutex);
@@ -147,7 +155,7 @@ static unsigned __stdcall thread_func(void *param)
 			print_stats();
 
 			cout << "\nSecondary read... ";
-			check_obj();
+			check_object();
 			cout << (sane ? "OK" : "GOTCHA AGAIN!");
 			print_stats();
 
