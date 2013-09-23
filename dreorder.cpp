@@ -156,24 +156,38 @@ static unsigned __stdcall thread_func(void *param)
 	};
 
 	check_object();
-	if (1) {
-		if (!sane) {
-			std::lock_guard<std::mutex> lock(gmutex);
+	while (!sane) {
+		//if (!id) break;
+		std::lock_guard<std::mutex> lock(gmutex);
+
+		if (!stop_on_secondary_fail) {
 			cout << "GOTCHA!";
 			print_stats();
-
 			cout << "\nSecondary read... ";
-			// this mb cannot help due to lack of a pair mb
-			atomic_thread_fence(std::memory_order_seq_cst);
-			check_object();
-
-			cout << (sane ? "OK" : "GOTCHA AGAIN!");
-			if (!(sane && stop_on_secondary_fail)) {
-				print_stats();
-				exiting = -1;
-			} else
-				cout << "\n\n";
 		}
+
+		// this mb cannot help due to lack of a pair mb
+		atomic_thread_fence(std::memory_order_seq_cst);
+		check_object();
+
+		if (!stop_on_secondary_fail) {
+			cout << (sane ? "OK" : "GOTCHA AGAIN!");
+			print_stats();
+			exiting = -1;
+			break;
+		}
+		// we need secondary fail at least
+		if (sane) break;
+
+		cout << "GOTCHA DOUBLE FAILURE!";
+		// waiting for correct data
+		while (!sane) {
+			print_stats();
+			cout << "\nNext read... ";
+			check_object();
+		}
+		print_stats();
+		exiting = -1;
 	}
 
 	_endthreadex(0);
@@ -188,7 +202,7 @@ static void termhandler(int reason)
 
 int main()
 {
-	cout << "\nDCLP checker v1.22 by Konstantin Chaplaev (c) 2013.";
+	cout << "\nDCLP checker v1.23 by Konstantin Chaplaev (c) 2013.";
 	cout << "\nBuilt on " << __DATE__ << " " __TIME__ << endl << endl;
 
 	// Set Ctrl+C handlers
