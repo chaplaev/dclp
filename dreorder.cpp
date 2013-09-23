@@ -130,6 +130,9 @@ static unsigned __stdcall thread_func(void *param)
 	bool sane;
 	int id = (int)param;
 
+	// pair barrier with put_instance()'s one.
+	atomic_thread_fence(std::memory_order_seq_cst);
+
 	// simulate some work
 	workload(id);
 
