@@ -1,4 +1,6 @@
 
+// SPOTs are very important places!
+
 #include <iostream>
 #include <cstring>
 #include <mutex>
@@ -9,10 +11,13 @@
 
 using namespace std;
 
-// let's catch the secondary incorrect read of the object
+// Let's catch the secondary incorrect read of the object.
 const bool stop_on_secondary_fail = true;
 
+
+// SPOT: size of huge_object's data. It is an empirical value :)
 const int DataSize = 1024*1024*1;
+// After filling 'data' member with `ones` we need to get a sum equal `data's` length.
 const size_t NeededSum = DataSize;
 
 const uint32_t SignBad = 0xBAD0BAD0;
@@ -21,10 +26,11 @@ const uint32_t Sign1 = 0xA1115111;
 const uint32_t Sign2 = 0xA2225222;
 const uint32_t Sign3 = 0xA3335333;
 
+// This class is huge, so we use DCLP approach.
 class huge_class
 {
 public:
-	// SPOT: this member (sign2) has a great impact on GOTCHA probability
+	// SPOT: this member (sign2) has a great impact on FAIL probability.
 	uint32_t sign2;
 	uint32_t sign0;
 	uint8_t  data[DataSize];
@@ -33,6 +39,7 @@ public:
 	huge_class()
 	{
 		sign0 = Sign0;
+		// Filling with `ones`, see above.
 		memset(data, 1, DataSize);
 		sign1 = Sign1;
 	}
@@ -50,20 +57,27 @@ template <typename T>
 class dclp
 {
 private:
+	// Quite frankly, this pointer must be std::atomic to ensure atomic read/write
+	// operations on it. Otherwise we can get partial read/write on some architectures.
+	// I want to keep the get_instance() code clean, sorry about that :)
 	T *pInstance;
+
+	// Standard DCLP's mutex.
 	std::mutex guard;
+	// Number of singleton's destruction. For testing purpose only.
 	size_t destructed;
 
 public:
 	dclp() : pInstance(nullptr), destructed(0) {}
-	// SPOT: virtual keyword has a large impact on GOTCHA probability too :)
+	// SPOT: virtual keyword has a large impact on FAIL probability too :)
 	virtual
 	~dclp() { put_instance(); }
 
 	T *get_instance()
 	{
 		T *tmp = pInstance;
-		// test mb (this mb is optional on geniue intel cpus)
+		// test mb (data dependency barrier is essential. But this mb is
+		// optional on genuine intel CPUs, afaik).
 		//atomic_thread_fence(std::memory_order_seq_cst);
 		if (tmp == nullptr) {
 			guard.lock();
@@ -79,31 +93,32 @@ public:
 		return tmp;
 	}
 
-	// testing-only purpose function
+	// Testing-only purpose function. "Destroys" the lazy singleton.
 	void put_instance()
 	{
 		guard.lock();
 		T *tmp = pInstance;
 		if (tmp) {
 			pInstance = nullptr;
-			//
+			// Dances with OS memory allocator.
 			tmp->sign0 = SignBad;
 			tmp->sign1 = SignBad + 1;
 			memset(tmp->data, 0x55, DataSize);
+
 			delete tmp;
 			destructed++;
 		}
+		// Need to ensure to see the new object's state in thread_func().
 		atomic_thread_fence(std::memory_order_seq_cst);
-		// this implies full memory barrier (or not?)
-		// anyway, this function is single-thread by design
+
+		// This implies full memory barrier (or not?).
+		// Anyway, this function is single-threaded by design.
 		guard.unlock();
 	}
 
 	inline size_t get_destruction_count() { return destructed; }
 };
 
-static dclp<huge_class> a;
-static std::mutex gmutex;
 static void workload(int id)
 {
 	static std::atomic<size_t> count(0);
@@ -121,22 +136,28 @@ static void workload(int id)
 	}
 }
 
+// Our singleton.
+static dclp<huge_class> a;
+// Exit flag. Implicit sec_cst operations are not important.
 static std::atomic<int> exiting(0);
+// aux mutex for printing.
+static std::mutex gmutex;
+
 static unsigned __stdcall thread_func(void *param)
 {
-	// volatile keyword may reduce GOTCHA probability
+	// volatile keyword may reduce FAIL probability.
 	volatile uint32_t sign0, sign1;
 	size_t sum;
 	bool sane;
 	int id = (int)param;
 
-	// pair barrier with put_instance()'s one.
+	// Pair barrier with put_instance()'s one.
 	atomic_thread_fence(std::memory_order_seq_cst);
 
-	// simulate some work
+	// Simulate some work. Exponentially by design, but who cares.
 	workload(id);
 
-	// Getting instance
+	// Get the object's instance!
 	auto p = a.get_instance();
 
 	auto check_object = [&]() {
@@ -161,26 +182,26 @@ static unsigned __stdcall thread_func(void *param)
 		std::lock_guard<std::mutex> lock(gmutex);
 
 		if (!stop_on_secondary_fail) {
-			cout << "GOTCHA!";
+			cout << "FAIL!";
 			print_stats();
 			cout << "\nSecondary read... ";
 		}
 
-		// this mb cannot help due to lack of a pair mb
+		// This mb cannot help us due to lack of a pair.
 		atomic_thread_fence(std::memory_order_seq_cst);
 		check_object();
 
 		if (!stop_on_secondary_fail) {
-			cout << (sane ? "OK" : "GOTCHA AGAIN!");
+			cout << (sane ? "OK" : "FAIL AGAIN!");
 			print_stats();
 			exiting = -1;
 			break;
 		}
-		// we need secondary fail at least
+		// We need secondary fail at least.
 		if (sane) break;
 
-		cout << "GOTCHA DOUBLE FAILURE!";
-		// waiting for correct data
+		cout << "GOT DOUBLE FAILURE!";
+		// Waiting for correct data.
 		while (!sane) {
 			print_stats();
 			cout << "\nNext read... ";
@@ -202,24 +223,24 @@ static void termhandler(int reason)
 
 int main()
 {
-	cout << "\nDCLP checker v1.23 by Konstantin Chaplaev (c) 2013.";
+	cout << "\nDCLP checker v1.24 by Konstantin Chaplaev (c) 2013.";
 	cout << "\nBuilt on " << __DATE__ << " " __TIME__ << endl << endl;
 
-	// Set Ctrl+C handlers
+	// Set Ctrl+C handlers.
 	signal(SIGINT, termhandler);
 	signal(SIGTERM, termhandler);
 
-	// initialize random seed
+	// Initialize random seed.
 	srand(time(NULL));
 
 	const unsigned ncores = thread::hardware_concurrency();
-	const unsigned tcount = ncores + 0; // for some pressure :)
+	const unsigned tcount = ncores + 0; // 0+ for some pressure :)
 	cout << ncores << " concurrent threads are supported, " << tcount << " are used.\n";
 	cout << "Please, be patient or press Ctrl+C to exit.\n" << endl;
 
 	while (!exiting) {
 		HANDLE th [tcount];
-		// randomizing threads per cores will improve fail probability is rare cases
+		// Randomizing threads per cores will improve fail probability is rare cases.
 		int rnd = rand();
 
 		for (unsigned i = 0; i < tcount; ++i) {
