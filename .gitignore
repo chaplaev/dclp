@@ -5,3 +5,4 @@ bin
 *.o
 *.dll
 obj
+*.save

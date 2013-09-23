@@ -9,6 +9,9 @@
 
 using namespace std;
 
+// let's catch the secondary incorrect read of the object
+const bool stop_on_secondary_fail = true;
+
 const int DataSize = 1024*1024*1;
 const size_t NeededSum = DataSize;
 
@@ -120,7 +123,8 @@ static void workload(int id)
 
 static unsigned __stdcall thread_func(void *param)
 {
-	uint32_t sign0, sign1;
+	// volatile keyword may reduce GOTCHA probability
+	volatile uint32_t sign0, sign1;
 	size_t sum;
 	bool sane;
 	int id = (int)param;
@@ -155,11 +159,16 @@ static unsigned __stdcall thread_func(void *param)
 			print_stats();
 
 			cout << "\nSecondary read... ";
+			// this mb cannot help due to lack of a pair mb
+			atomic_thread_fence(std::memory_order_seq_cst);
 			check_object();
-			cout << (sane ? "OK" : "GOTCHA AGAIN!");
-			print_stats();
 
-			exit(-1);
+			cout << (sane ? "OK" : "GOTCHA AGAIN!");
+			if (!(sane && stop_on_secondary_fail)) {
+				print_stats();
+				exit(-1);
+			}
+			cout << "\n\n";
 		}
 	}
 
