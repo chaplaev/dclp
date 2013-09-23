@@ -121,6 +121,7 @@ static void workload(int id)
 	}
 }
 
+static std::atomic<int> exiting(0);
 static unsigned __stdcall thread_func(void *param)
 {
 	// volatile keyword may reduce GOTCHA probability
@@ -166,9 +167,9 @@ static unsigned __stdcall thread_func(void *param)
 			cout << (sane ? "OK" : "GOTCHA AGAIN!");
 			if (!(sane && stop_on_secondary_fail)) {
 				print_stats();
-				exit(-1);
-			}
-			cout << "\n\n";
+				exiting = -1;
+			} else
+				cout << "\n\n";
 		}
 	}
 
@@ -176,7 +177,6 @@ static unsigned __stdcall thread_func(void *param)
     return 0;
 }
 
-static std::atomic<int> exiting(0);
 static void termhandler(int reason)
 {
 	cout << "\nGot signal, exiting..." << endl;
