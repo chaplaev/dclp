@@ -1,0 +1,31 @@
+
+DCLP checker v1.24 by Konstantin Chaplaev (c) 2013.
+Built on Sep 24 2013 02:36:59
+
+2 concurrent threads are supported, 2 are used.
+Please, be patient or press Ctrl+C to exit.
+
+id = 1, count = 90000
+GOT DOUBLE FAILURE!
+obj address = 0x1040020
+thread id   = 1
+sign0       = 0xa0005000, needed 0xa0005000
+sign1       = 0x0, needed 0xa1115111
+data sum    = 0x78fd8, needed 0x100000
+iteration   = 28
+
+Next read... 
+obj address = 0x1040020
+thread id   = 1
+sign0       = 0xa0005000, needed 0xa0005000
+sign1       = 0x0, needed 0xa1115111
+data sum    = 0xdf9b3, needed 0x100000
+iteration   = 28
+
+Next read... 
+obj address = 0x1040020
+thread id   = 1
+sign0       = 0xa0005000, needed 0xa0005000
+sign1       = 0xa1115111, needed 0xa1115111
+data sum    = 0x100000, needed 0x100000
+iteration   = 28

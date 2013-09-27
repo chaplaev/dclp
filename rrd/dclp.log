@@ -1,0 +1,50 @@
+dlcp_test
+ACCESS TO UNITIALIZED VARIABLE
+iteration: 3
+
+execution history (20):
+relacy_2_4/relacy/context.hpp (fiber_proc_impl(), 457) : [0] 0: [CTOR BEGIN]
+relacy_2_4/relacy/atomic.hpp (atomic(), 594) : [1] 0: <0x3f53a0> atomic store, value=0, (prev value=0), order=relaxed
+relacy_2_4/relacy/context.hpp (fiber_proc_impl(), 457) : [2] 0: [CTOR END]
+relacy_2_4/relacy/context.hpp (fiber_proc_impl(), 457) : [3] 0: [BEFORE BEGIN]
+dclp.h (put_instance(), 51) : [4] 0: <0xc9484c> mutex: exclusive lock
+dclp.h (put_instance(), 52) : [5] 0: <0x3f53a0> atomic load, value=0, order=acquire
+dclp.h (put_instance(), 58) : [6] 0: <0xc9484c> mutex: exclusive unlock
+relacy_2_4/relacy/context.hpp (fiber_proc_impl(), 457) : [7] 0: [BEFORE END]
+dclp.h (get_instance(), 32) : [8] 0: <0x3f53a0> atomic load, value=0, order=relaxed
+dclp.h (get_instance(), 36) : [9] 0: <0xc9484c> mutex: exclusive lock
+dclp.h (get_instance(), 37) : [10] 0: <0x3f53a0> atomic load, value=0, order=acquire
+dclp.h (huge_class(), 15) : [11] 0: <0xc94998> atomic store, value=1122334455, (prev value=0), order=release
+dclp.h (get_instance(), 39) : [12] 0: memory allocation: addr=0xc94998, size=32
+dclp.h (get_instance(), 42) : [13] 0: <0x3f53a0> atomic store, value=0xc94998, (prev value=0), order=relaxed
+dclp.h (get_instance(), 44) : [14] 0: <0xc9484c> mutex: exclusive unlock
+dclp.h (get(), 16) : [15] 0: <0xc94998> atomic load, value=1122334455, order=acquire
+relacy_2_4/relacy/context.hpp (fiber_proc_impl(), 457) : [16] 0: [THREAD FINISHED]
+dclp.h (get_instance(), 32) : [17] 1: <0x3f53a0> atomic load, value=0xc94998, order=relaxed
+dclp.h (get(), 16) : [18] 1: <0xc94998> atomic load, value=0, order=acquire
+dclp.h (get(), 16) : [19] 1: ACCESS TO UNITIALIZED VARIABLE
+
+thread 0:
+relacy_2_4/relacy/context.hpp (fiber_proc_impl(), 457) : [0] 0: [CTOR BEGIN]
+relacy_2_4/relacy/atomic.hpp (atomic(), 594) : [1] 0: <0x3f53a0> atomic store, value=0, (prev value=0), order=relaxed
+relacy_2_4/relacy/context.hpp (fiber_proc_impl(), 457) : [2] 0: [CTOR END]
+relacy_2_4/relacy/context.hpp (fiber_proc_impl(), 457) : [3] 0: [BEFORE BEGIN]
+dclp.h (put_instance(), 51) : [4] 0: <0xc9484c> mutex: exclusive lock
+dclp.h (put_instance(), 52) : [5] 0: <0x3f53a0> atomic load, value=0, order=acquire
+dclp.h (put_instance(), 58) : [6] 0: <0xc9484c> mutex: exclusive unlock
+relacy_2_4/relacy/context.hpp (fiber_proc_impl(), 457) : [7] 0: [BEFORE END]
+dclp.h (get_instance(), 32) : [8] 0: <0x3f53a0> atomic load, value=0, order=relaxed
+dclp.h (get_instance(), 36) : [9] 0: <0xc9484c> mutex: exclusive lock
+dclp.h (get_instance(), 37) : [10] 0: <0x3f53a0> atomic load, value=0, order=acquire
+dclp.h (huge_class(), 15) : [11] 0: <0xc94998> atomic store, value=1122334455, (prev value=0), order=release
+dclp.h (get_instance(), 39) : [12] 0: memory allocation: addr=0xc94998, size=32
+dclp.h (get_instance(), 42) : [13] 0: <0x3f53a0> atomic store, value=0xc94998, (prev value=0), order=relaxed
+dclp.h (get_instance(), 44) : [14] 0: <0xc9484c> mutex: exclusive unlock
+dclp.h (get(), 16) : [15] 0: <0xc94998> atomic load, value=1122334455, order=acquire
+relacy_2_4/relacy/context.hpp (fiber_proc_impl(), 457) : [16] 0: [THREAD FINISHED]
+
+thread 1:
+dclp.h (get_instance(), 32) : [17] 1: <0x3f53a0> atomic load, value=0xc94998, order=relaxed
+dclp.h (get(), 16) : [18] 1: <0xc94998> atomic load, value=0, order=acquire
+dclp.h (get(), 16) : [19] 1: ACCESS TO UNITIALIZED VARIABLE
+
