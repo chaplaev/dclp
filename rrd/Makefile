@@ -1,5 +1,8 @@
-#
+# MinGW 4.8.1 only
 
+# Path to Relacy Race Detector 2.4. 
+# http://www.1024cores.net/home/downloads/relacy_2_4.zip
+#
 RRD_DIR		= M:\cygwin\home\user\relacy_2_4
 
 CC 			= g++
