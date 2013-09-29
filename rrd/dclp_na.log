@@ -1,0 +1,44 @@
+dlcp_test
+ACCESS TO UNITIALIZED VARIABLE
+iteration: 3
+
+execution history (17):
+relacy_2_4/relacy/context.hpp (fiber_proc_impl(), 457) : [0] 0: [CTOR BEGIN]
+relacy_2_4/relacy/context.hpp (fiber_proc_impl(), 457) : [1] 0: [CTOR END]
+relacy_2_4/relacy/context.hpp (fiber_proc_impl(), 457) : [2] 0: [BEFORE BEGIN]
+dclp.h (put_instance(), 51) : [3] 0: <0x3fa3d4> mutex: exclusive lock
+dclp.h (put_instance(), 58) : [4] 0: <0x3fa3d4> mutex: exclusive unlock
+relacy_2_4/relacy/context.hpp (fiber_proc_impl(), 457) : [5] 0: [BEFORE END]
+dclp.h (get_instance(), 34) : [6] 0: acquire fence
+dclp.h (get_instance(), 36) : [7] 0: <0x3fa3d4> mutex: exclusive lock
+dclp.h (huge_class(), 15) : [8] 0: <0x3fa520> atomic store, value=1122334455, (prev value=0), order=relaxed
+dclp.h (get_instance(), 39) : [9] 0: memory allocation: addr=0x3fa520, size=32
+dclp.h (get_instance(), 41) : [10] 0: release fence
+dclp.h (get_instance(), 44) : [11] 0: <0x3fa3d4> mutex: exclusive unlock
+dclp.h (get(), 16) : [12] 0: <0x3fa520> atomic load, value=1122334455, order=relaxed
+relacy_2_4/relacy/context.hpp (fiber_proc_impl(), 457) : [13] 0: [THREAD FINISHED]
+dclp.h (get_instance(), 34) : [14] 1: acquire fence
+dclp.h (get(), 16) : [15] 1: <0x3fa520> atomic load, value=0, order=relaxed
+dclp.h (get(), 16) : [16] 1: ACCESS TO UNITIALIZED VARIABLE
+
+thread 0:
+relacy_2_4/relacy/context.hpp (fiber_proc_impl(), 457) : [0] 0: [CTOR BEGIN]
+relacy_2_4/relacy/context.hpp (fiber_proc_impl(), 457) : [1] 0: [CTOR END]
+relacy_2_4/relacy/context.hpp (fiber_proc_impl(), 457) : [2] 0: [BEFORE BEGIN]
+dclp.h (put_instance(), 51) : [3] 0: <0x3fa3d4> mutex: exclusive lock
+dclp.h (put_instance(), 58) : [4] 0: <0x3fa3d4> mutex: exclusive unlock
+relacy_2_4/relacy/context.hpp (fiber_proc_impl(), 457) : [5] 0: [BEFORE END]
+dclp.h (get_instance(), 34) : [6] 0: acquire fence
+dclp.h (get_instance(), 36) : [7] 0: <0x3fa3d4> mutex: exclusive lock
+dclp.h (huge_class(), 15) : [8] 0: <0x3fa520> atomic store, value=1122334455, (prev value=0), order=relaxed
+dclp.h (get_instance(), 39) : [9] 0: memory allocation: addr=0x3fa520, size=32
+dclp.h (get_instance(), 41) : [10] 0: release fence
+dclp.h (get_instance(), 44) : [11] 0: <0x3fa3d4> mutex: exclusive unlock
+dclp.h (get(), 16) : [12] 0: <0x3fa520> atomic load, value=1122334455, order=relaxed
+relacy_2_4/relacy/context.hpp (fiber_proc_impl(), 457) : [13] 0: [THREAD FINISHED]
+
+thread 1:
+dclp.h (get_instance(), 34) : [14] 1: acquire fence
+dclp.h (get(), 16) : [15] 1: <0x3fa520> atomic load, value=0, order=relaxed
+dclp.h (get(), 16) : [16] 1: ACCESS TO UNITIALIZED VARIABLE
+

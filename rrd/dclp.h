@@ -12,15 +12,15 @@ class huge_class
 public:
 	std::atomic<uint32_t> sign0;
 
-	huge_class() { sign0.store(Sign0, std::memory_order_release); }
-	uint32_t get(){ return sign0.load(std::memory_order_acquire); }
+	huge_class() { sign0.store(Sign0, std::memory_order_relaxed); }
+	uint32_t get(){ return sign0.load(std::memory_order_relaxed); }
 };
 
 template <typename T>
 class dlcp
 {
 private:
-	std::atomic<T *> pInstance;
+	T *pInstance;
 	std::mutex guard;
 
 public:
@@ -29,17 +29,17 @@ public:
 
 	T *get_instance()
 	{
-		T *tmp = pInstance.load(std::memory_order_relaxed);
+		T *tmp = pInstance;
 		// test mb
-		//atomic_thread_fence(std::memory_order_acquire);
+		atomic_thread_fence(std::memory_order_acquire);
 		if (tmp == nullptr) {
 			guard.lock($);
-			tmp = pInstance.load(std::memory_order_acquire);
+			tmp = pInstance;
 			if (tmp == nullptr) {
 				tmp = new T();
 				// test mb
-				//atomic_thread_fence(std::memory_order_release);
-				pInstance.store(tmp, std::memory_order_relaxed);
+				atomic_thread_fence(std::memory_order_release);
+				pInstance = tmp;
 			}
 			guard.unlock($);
 		}
@@ -49,9 +49,9 @@ public:
 	void put_instance()
 	{
 		guard.lock($);
-		T *tmp = pInstance.load(std::memory_order_acquire);
+		T *tmp = pInstance;
 		if (tmp) {
-			pInstance.store(nullptr, std::memory_order_release);
+			pInstance = nullptr;
 			atomic_thread_fence(std::memory_order_seq_cst);
 			delete tmp;
 		}
