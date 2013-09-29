@@ -76,16 +76,21 @@ public:
 	T *get_instance()
 	{
 		T *tmp = pInstance;
-		// test mb (data dependency barrier is essential. But this mb is
+		// test mb (data dependency barrier is essential, but it is
 		// optional on genuine intel CPUs, afaik).
-		//atomic_thread_fence(std::memory_order_seq_cst);
+		atomic_thread_fence(std::memory_order_acquire);
 		if (tmp == nullptr) {
 			guard.lock();
 			tmp = pInstance;
 			if (tmp == nullptr) {
 				tmp = new T;
 				// test mb
-				//atomic_thread_fence(std::memory_order_seq_cst);
+				// atomic_thread_fence() synchronizes-with an operations on atomic
+				// variables only, not with other atomic_thread_fence(). pInstance
+				// is not atomic, so we'll get a race. Moreover, atomic_thread_fence()
+				// doesn't imply compiler barrier here, so we can get a race even on
+				// strong-ordered CPUs.
+				atomic_thread_fence(std::memory_order_release);
 				pInstance = tmp;
 			}
 			guard.unlock();
